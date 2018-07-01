@@ -34,7 +34,7 @@ describe('endpoint resolution', function() {
   });
 	it('should get authorization redirect url', async () => {
 		const indieauthn = new IndieAuthentication({
-      me: 'https://martymcgui.re/',
+      me: 'http://mmg.re',
       clientId: 'https://example.com/',
       redirectUri: 'https://example.com/indieauth-redirect'
     });

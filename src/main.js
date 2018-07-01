@@ -134,6 +134,7 @@ class IndieAuthentication {
       this.getUrlWithRedirects(url)
         .then(result => {
           let res = result.response;
+          url = result.url;
           baseUrl = result.url;
           // Check for endpoints in headers
           const linkHeaders = res.headers.get('link');

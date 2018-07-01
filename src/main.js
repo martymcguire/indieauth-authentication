@@ -223,7 +223,7 @@ class IndieAuthentication {
         },
         // mode: 'cors',
       };
-      fetch(this.options.tokenEndpoint, request)
+      fetch(this.options.authEndpoint, request)
         .then(res => {
           if (!res.ok) {
             return reject(iauthnError('Error getting token', res.status));
@@ -248,7 +248,7 @@ class IndieAuthentication {
           if (!result.me) {
             return reject(
               iauthnError(
-                'The token endpoint did not return the expected parameters',
+                'The auth endpoint did not return the expected parameters',
               ),
             );
           }

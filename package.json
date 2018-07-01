@@ -1,6 +1,6 @@
 {
   "name": "indieauth-authentication",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A helper class for creating apps that authenticate via IndieAuth",
   "keywords": [
     "indieauth",

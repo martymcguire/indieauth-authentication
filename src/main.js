@@ -17,10 +17,17 @@ if (dependencies.URL && !global.URL) {
 const defaultSettings = {
   me: '',
   token: '',
-  authEndpoint: '',
-  tokenEndpoint: '',
-  micropubEndpoint: '',
+  // want more endpoints, or to name them something different?
+  // you can override relEndpoints when creating an IndieAuthentication!
+  relEndpoints: {
+    'authorization_endpoint': 'auth',
+    'token_endpoint': 'token',
+    'micropub': 'micropub'
+  }
 };
+
+// FIXME: internal mappings, always capture authorization and
+// token endpoints so we can use them to build URLs etc.!
 
 const iauthnError = (message, status = null, error = null) => {
   return {
@@ -123,11 +130,8 @@ class IndieAuthentication {
    */
   getEndpointsFromUrl(url) {
     return new Promise((fulfill, reject) => {
-      let endpoints = {
-        micropub: null,
-        authorization_endpoint: null,
-        token_endpoint: null,
-      };
+      let endpoints = { };
+      let rels_to_endpoints = this.options.relEndpoints;
       // Make sure the url is canonicalized
       url = this.getCanonicalUrl(url);
       let baseUrl = url;
@@ -141,7 +145,7 @@ class IndieAuthentication {
           if (linkHeaders) {
             const links = linkHeaders.split(',');
             links.forEach(link => {
-              Object.keys(endpoints).forEach(key => {
+              Object.keys(rels_to_endpoints).forEach(key => {
                 const rel = link.match(/rel=("([^"]*)"|([^,"<]+))/);
                 if (
                   rel &&
@@ -153,7 +157,7 @@ class IndieAuthentication {
                   if (linkValues && linkValues[0]) {
                     let endpointUrl = linkValues[0];
                     endpointUrl = new URL(endpointUrl, url).toString();
-                    endpoints[key] = endpointUrl;
+                    endpoints[rels_to_endpoints[key]] = endpointUrl;
                   }
                 }
               });
@@ -169,22 +173,32 @@ class IndieAuthentication {
           // Save necessary endpoints.
           this.options.me = url;
           if (rels) {
-            Object.keys(endpoints).forEach(key => {
+            Object.keys(rels_to_endpoints).forEach(key => {
               if (rels[key] && rels[key][0]) {
-                endpoints[key] = rels[key][0];
+                endpoints[rels_to_endpoints[key]] = rels[key][0];
               }
             });
           }
 
-          if ( endpoints.authorization_endpoint ) {
-            this.options.micropubEndpoint = endpoints.micropub;
-            this.options.tokenEndpoint = endpoints.token_endpoint;
-            this.options.authEndpoint = endpoints.authorization_endpoint;
-            return fulfill({
-              auth: this.options.authEndpoint,
-              token: this.options.tokenEndpoint,
-              micropub: this.options.micropubEndpoint,
-            });
+          let endpoint_keys = Object.keys(endpoints);
+          if ( endpoint_keys.length > 0 ) {
+            // duplicate into this.options for later reference
+            this.options.endpoints = endpoints;
+            // keep backwards-compatible entries:
+            let authEndpointKey = rels_to_endpoints['authorization_endpoint'];
+            if( endpoints[authEndpointKey] ){
+              this.options.authEndpoint = endpoints[authEndpointKey];
+            }
+            let tokenEndpointKey = rels_to_endpoints['token_endpoint'];
+            if( endpoints[tokenEndpointKey] ){
+              this.options.tokenEndpoint = endpoints[tokenEndpointKey];
+            }
+            let micropubEndpointKey = rels_to_endpoints['micropub'];
+            if( endpoints[micropubEndpointKey] ){
+              this.options.micropubEndpoint = endpoints[micropubEndpointKey];
+            }
+
+            return fulfill(endpoints);
           }
 
           return reject(iauthnError('Error getting authorization header data'));

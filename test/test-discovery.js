@@ -42,3 +42,36 @@ describe('endpoint resolution', function() {
     assert.equal(redirect_url, 'https://indieauth.com/auth?me=https%3A%2F%2Fmartymcgui.re%2F&client_id=https%3A%2F%2Fexample.com%2F&redirect_uri=https%3A%2F%2Fexample.com%2Findieauth-redirect&response_type=id');
   });
 });
+
+describe('endpoint resolution overrides', function() {
+  it('should find microsub endpoint', async () => {
+    const indieauthn = new IndieAuthentication({
+      'relEndpoints': {
+        'microsub': 'microsub'
+      }
+    });
+    let endpoints = await indieauthn.getEndpointsFromUrl('https://martymcgui.re/');
+    assert.equal(endpoints.microsub, 'https://aperture.maktro.net/microsub/1');
+  });
+  it('should find "authz" endpoint', async () => {
+    const indieauthn = new IndieAuthentication({
+      'relEndpoints': {
+        'authorization_endpoint': 'authz'
+      }
+    });
+    let endpoints = await indieauthn.getEndpointsFromUrl('https://martymcgui.re/');
+    assert.equal(endpoints.authz, 'https://indieauth.com/auth');
+  });
+	it('should get authorization redirect url after renaming', async () => {
+		const indieauthn = new IndieAuthentication({
+      me: 'http://martymcgui.re',
+      clientId: 'https://example.com/',
+      redirectUri: 'https://example.com/indieauth-redirect',
+      relEndpoints: {
+        'authorization_endpoint': 'authz'
+      }
+    });
+    let redirect_url = await indieauthn.getAuthUrl();
+    assert.equal(redirect_url, 'https://indieauth.com/auth?me=https%3A%2F%2Fmartymcgui.re%2F&client_id=https%3A%2F%2Fexample.com%2F&redirect_uri=https%3A%2F%2Fexample.com%2Findieauth-redirect&response_type=id');
+  });
+});

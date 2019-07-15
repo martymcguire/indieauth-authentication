@@ -17,13 +17,15 @@ if (dependencies.URL && !global.URL) {
 const defaultSettings = {
   me: '',
   token: '',
-  // want more endpoints, or to name them something different?
+  // want more endpoints, or name them differently?
   // you can override relEndpoints when creating an IndieAuthentication!
   relEndpoints: {
     'authorization_endpoint': 'auth',
     'token_endpoint': 'token',
     'micropub': 'micropub'
   }
+  // pass in `scope` when creating a new instance if you want to
+  // get an access token suitable for micropub/-sub
 };
 
 // FIXME: internal mappings, always capture authorization and
@@ -126,7 +128,7 @@ class IndieAuthentication {
   /**
    * Get the authorization endpoint needed from the given url
    * @param  {string} url The url to scrape
-   * @return {Promise}    Passes an object of endpoints on success: auth, optional token and micropub
+   * @return {Promise}    Passes an object of endpoints on success based on relEndpoints mapping
    */
   getEndpointsFromUrl(url) {
     return new Promise((fulfill, reject) => {
@@ -209,11 +211,13 @@ class IndieAuthentication {
 
   verifyCode(code) {
     return new Promise((fulfill, reject) => {
-      const requirements = this.checkRequiredOptions([
-        'me',
-        'clientId',
-        'redirectUri',
-      ]);
+      let requiredOptions = ['me','clientId','redirectUri'];
+      if( this.options.scope ){
+        requiredOptions = requiredOptions.concat(['tokenEndpoint']);
+      } else {
+        requiredOptions = requiredOptions.concat(['authEndpoint']);
+      }
+      const requirements = this.checkRequiredOptions(requiredOptions);
       if (!requirements.pass) {
         return reject(
           iauthnError(
@@ -222,11 +226,20 @@ class IndieAuthentication {
         );
       }
 
-      const data = {
+      let data = {
         code: code,
         client_id: this.options.clientId,
         redirect_uri: this.options.redirectUri,
       };
+
+      let endpoint = this.options.authEndpoint;
+
+      if( this.options.scope ){
+        data = data.assign({
+          grant_type: 'authorization_code'
+        });
+        endpoint = this.options.tokenEndpoint;
+      }
 
       const request = {
         method: 'POST',
@@ -237,10 +250,10 @@ class IndieAuthentication {
         },
         // mode: 'cors',
       };
-      fetch(this.options.authEndpoint, request)
+      fetch(endpoint, request)
         .then(res => {
           if (!res.ok) {
-            return reject(iauthnError('Error getting token', res.status));
+            return reject(iauthnError('Error validating auth code', res.status));
           }
           const contentType = res.headers.get('Content-Type');
           if (contentType && contentType.indexOf('application/json') === 0) {
@@ -274,7 +287,8 @@ class IndieAuthentication {
           ) {
             return reject(iauthnError('The me values did not match'));
           }
-          // Successfully got the token
+          // Successfully verified the code
+          // FIXME: if scope, send back the token, too!
           fulfill(result.me);
         })
         .catch(err =>
@@ -315,9 +329,17 @@ class IndieAuthentication {
             me: this.options.me,
             client_id: this.options.clientId,
             redirect_uri: this.options.redirectUri,
-            response_type: 'id',
             state: this.options.state,
           };
+          if( this.options.scope ){
+            // if there's a scope, we'll request a code to exchange for an
+            // access token.
+            authParams['scope'] = this.options.scope;
+            authParams['response_type'] = 'code';
+          } else {
+            // otherwise we just want to auth this user
+            authParams['response_type'] = 'id';
+          }
 
           fulfill(this.options.authEndpoint + '?' + qsStringify(authParams));
         })

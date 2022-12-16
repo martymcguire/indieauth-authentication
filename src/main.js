@@ -7,8 +7,8 @@ const appendQueryString = dependencies.appendQueryString;
 if (dependencies.FormData && !global.FormData) {
   global.FormData = dependencies.FormData;
 }
-if (dependencies.DOMParser && !global.DOMParser) {
-  global.DOMParser = dependencies.DOMParser;
+if (dependencies.JSDOM && !global.DOMParser) {
+  global.DOMParser = new dependencies.JSDOM().window.DOMParser;
 }
 if (dependencies.URL && !global.URL) {
   global.URL = dependencies.URL;

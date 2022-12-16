@@ -30,7 +30,7 @@ describe('endpoint resolution', function() {
 	it('should find authorization endpoint', async () => {
 		const indieauthn = new IndieAuthentication();
     let endpoints = await indieauthn.getEndpointsFromUrl('https://martymcgui.re/');
-    assert.equal(endpoints.auth, 'https://indieauth.com/auth');
+    assert.equal(endpoints.auth, 'https://martymcgui.re/api/indieauth/auth');
   });
 	it('should get authorization redirect url', async () => {
 		const indieauthn = new IndieAuthentication({
@@ -39,7 +39,7 @@ describe('endpoint resolution', function() {
       redirectUri: 'https://example.com/indieauth-redirect'
     });
     let redirect_url = await indieauthn.getAuthUrl();
-    assert.equal(redirect_url, 'https://indieauth.com/auth?me=https%3A%2F%2Fmartymcgui.re%2F&client_id=https%3A%2F%2Fexample.com%2F&redirect_uri=https%3A%2F%2Fexample.com%2Findieauth-redirect&response_type=id');
+    assert.equal(redirect_url, 'https://martymcgui.re/api/indieauth/auth?me=https%3A%2F%2Fmartymcgui.re%2F&client_id=https%3A%2F%2Fexample.com%2F&redirect_uri=https%3A%2F%2Fexample.com%2Findieauth-redirect&response_type=id');
   });
 });
 
@@ -60,7 +60,7 @@ describe('endpoint resolution overrides', function() {
       }
     });
     let endpoints = await indieauthn.getEndpointsFromUrl('https://martymcgui.re/');
-    assert.equal(endpoints.authz, 'https://indieauth.com/auth');
+    assert.equal(endpoints.authz, 'https://martymcgui.re/api/indieauth/auth');
   });
 	it('should get authorization redirect url after renaming', async () => {
 		const indieauthn = new IndieAuthentication({
@@ -72,6 +72,6 @@ describe('endpoint resolution overrides', function() {
       }
     });
     let redirect_url = await indieauthn.getAuthUrl();
-    assert.equal(redirect_url, 'https://indieauth.com/auth?me=https%3A%2F%2Fmartymcgui.re%2F&client_id=https%3A%2F%2Fexample.com%2F&redirect_uri=https%3A%2F%2Fexample.com%2Findieauth-redirect&response_type=id');
+    assert.equal(redirect_url, 'https://martymcgui.re/api/indieauth/auth?me=https%3A%2F%2Fmartymcgui.re%2F&client_id=https%3A%2F%2Fexample.com%2F&redirect_uri=https%3A%2F%2Fexample.com%2Findieauth-redirect&response_type=id');
   });
 });
